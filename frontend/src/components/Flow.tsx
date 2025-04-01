@@ -30,6 +30,62 @@ const defaultEdges: Edge[] = [];
 function Flow() {
   const reactFlowInstance = useReactFlow();
 
+  function handleUpdateLabel(nodeId: string, newLabel: string) {
+    reactFlowInstance.setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: newLabel,
+            },
+          };
+        }
+        return node;
+      }),
+    );
+  }
+
+  function handleDeleteNode(nodeId: string) {
+    // Get current nodes and edges
+    const currentNodes = reactFlowInstance.getNodes();
+    const currentEdges = reactFlowInstance.getEdges();
+
+    // Find the node to delete
+    const nodeToDelete = currentNodes.find((node) => node.id === nodeId);
+    if (!nodeToDelete) return;
+
+    // Find incoming and outgoing edges
+    const incomingEdge = currentEdges.find((edge) => edge.target === nodeId);
+    const outgoingEdge = currentEdges.find((edge) => edge.source === nodeId);
+
+    if (!incomingEdge || !outgoingEdge) return;
+
+    // Create a new edge connecting the nodes before and after the deleted node
+    const newEdge: Edge = {
+      id: `${incomingEdge.source}-${outgoingEdge.target}`,
+      source: incomingEdge.source,
+      target: outgoingEdge.target,
+      type: "addButtonEdge",
+      data: {
+        onClick: () =>
+          addActionNode(`${incomingEdge.source}-${outgoingEdge.target}`),
+      },
+    };
+
+    // Remove the node and its connected edges
+    reactFlowInstance.setNodes(
+      currentNodes.filter((node) => node.id !== nodeId),
+    );
+    reactFlowInstance.setEdges([
+      ...currentEdges.filter(
+        (edge) => edge.id !== incomingEdge.id && edge.id !== outgoingEdge.id,
+      ),
+      newEdge,
+    ]);
+  }
+
   function addActionNode(edgeId: string) {
     const edges = reactFlowInstance.getEdges();
 
@@ -66,7 +122,12 @@ function Flow() {
     const newNode: Node = {
       id: newNodeId,
       position: newNodePosition,
-      data: { label: "Action Node" },
+      data: {
+        label: "Action Node",
+        onUpdateLabel: (newLabel: string) =>
+          handleUpdateLabel(newNodeId, newLabel),
+        onDelete: () => handleDeleteNode(newNodeId),
+      },
       type: "action",
     };
 
