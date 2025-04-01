@@ -1,22 +1,24 @@
-import { Background, Controls, Node, ReactFlow } from "@xyflow/react";
+import { Background, Controls, Edge, Node, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { nodeTypes } from "../types";
 
 const initialNodes: Node[] = [
   {
     id: "start",
-    position: { x: 0, y: 0 },
+    position: { x: 300, y: 200 },
     data: { label: "Start" },
     type: "start",
   },
   {
     id: "end",
-    position: { x: 0, y: 100 },
-    data: { label: "End" },
+    position: { x: 300, y: 400 },
+    data: {},
     type: "end",
   },
 ];
-const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
+const initialEdges: Edge[] = [
+  { id: "start-end", source: "start", target: "end" },
+];
 
 function Flow() {
   return (
