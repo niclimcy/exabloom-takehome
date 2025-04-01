@@ -2,7 +2,7 @@ import { BaseNode } from "@/components/base-node";
 import { IconMessage2Share } from "@tabler/icons-react";
 import { Handle, Node, NodeProps, Position } from "@xyflow/react";
 
-type StartNodeProps = Node<{ label: string }, "label">;
+type StartNodeProps = Node<{ label: string }, "start">;
 
 function StartNode({ data, selected }: NodeProps<StartNodeProps>) {
   return (
