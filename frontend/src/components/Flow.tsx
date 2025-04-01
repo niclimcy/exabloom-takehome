@@ -1,6 +1,6 @@
 import { Background, Controls, Edge, Node, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { nodeTypes } from "../types";
+import { nodeTypes, edgeTypes } from "@/types";
 
 const initialNodes: Node[] = [
   {
@@ -17,7 +17,7 @@ const initialNodes: Node[] = [
   },
 ];
 const initialEdges: Edge[] = [
-  { id: "start-end", source: "start", target: "end" },
+  { id: "start-end", source: "start", target: "end", type: "addButtonEdge" },
 ];
 
 function Flow() {
@@ -27,6 +27,7 @@ function Flow() {
         nodes={initialNodes}
         edges={initialEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
       >
         <Background />
         <Controls />

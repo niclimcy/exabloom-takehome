@@ -1,4 +1,4 @@
-import Flow from "./components/Flow";
+import Flow from "@/components/Flow";
 
 function App() {
   return (
