@@ -21,7 +21,7 @@ type ActionNodeProps = Node<
     onUpdateLabel: (label: string) => void;
     onDelete: () => void;
   },
-  "label"
+  "actionNode"
 >;
 
 function ActionNode({ data, selected }: NodeProps<ActionNodeProps>) {
