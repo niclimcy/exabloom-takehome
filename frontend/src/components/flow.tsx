@@ -8,6 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { edgeTypes, nodeTypes } from "@/types";
+import { applyLayout } from "@/utils/layout";
 import { useEffect } from "react";
 
 const defaultNodes: Node[] = [
@@ -42,6 +43,9 @@ function Flow() {
       },
     };
     reactFlowInstance.addEdges(initialEdge);
+
+    // Apply initial layout
+    setTimeout(() => applyLayout(reactFlowInstance), 100);
   }, []);
 
   return (

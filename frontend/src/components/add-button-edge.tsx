@@ -1,4 +1,4 @@
-import { addActionNode, addIfElseNode } from "@/actions";
+import { addActionNode, addIfElseNode } from "@/utils/actions";
 import { ButtonEdge } from "@/components/button-edge";
 import { Button } from "@/components/ui/button";
 import {
