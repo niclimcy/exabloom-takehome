@@ -1,4 +1,4 @@
-import { addActionNode } from "@/actions";
+import { addActionNode, addIfElseNode } from "@/actions";
 import { ButtonEdge } from "@/components/button-edge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,6 @@ function AddButtonEdge(props: EdgeProps<AddButtonEdgeProps>) {
             variant="outline"
             className="w-full h-12"
             onClick={() => {
-              console.log("reactFlowInstance", props.data?.reactFlowInstance);
               if (!props.data?.reactFlowInstance) return;
 
               addActionNode(props.data.reactFlowInstance, props.id);
@@ -40,7 +39,15 @@ function AddButtonEdge(props: EdgeProps<AddButtonEdgeProps>) {
             </div>
             Add Action Node
           </Button>
-          <Button variant="outline" className="w-full h-12">
+          <Button
+            variant="outline"
+            className="w-full h-12"
+            onClick={() => {
+              if (!props.data?.reactFlowInstance) return;
+
+              addIfElseNode(props.data.reactFlowInstance, props.id);
+            }}
+          >
             <div className="text-yellow-500 bg-yellow-100 rounded-md p-2">
               <IconRouteAltLeft className="size-4" />
             </div>

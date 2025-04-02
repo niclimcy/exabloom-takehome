@@ -133,7 +133,7 @@ function addActionNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
     },
   };
 
-  // Update states separately and only once
+  // Update states
   reactFlowInstance.setNodes(updatedNodes);
   reactFlowInstance.setEdges([
     ...edges.filter((e) => e.id !== edgeId),
@@ -142,4 +142,89 @@ function addActionNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
   ]);
 }
 
-export { handleUpdateLabel, handleDeleteNode, addActionNode };
+function addIfElseNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
+  const edges = reactFlowInstance.getEdges();
+
+  // Find the edge that was clicked
+  const edge = edges.find((e) => e.id === edgeId);
+  if (!edge) return;
+
+  // Find source and target nodes
+  const nodes = reactFlowInstance.getNodes();
+  const sourceNode = nodes.find((n) => n.id === edge.source);
+  const targetNode = nodes.find((n) => n.id === edge.target);
+  if (!sourceNode || !targetNode) return;
+
+  // Create new action node with 200px spacing
+  const newNodeId = `action-${Date.now()}`;
+
+  // Calculate new positions
+  const updatedNodes = [...nodes];
+
+  updatedNodes.forEach((node) => {
+    // Move nodes that are below the source node down
+    if (node.position.y > sourceNode.position.y) {
+      node.position.y += 200;
+    }
+  });
+
+  // Moving downward
+  const newNodePosition = {
+    x: sourceNode.position.x,
+    y: sourceNode.position.y + 200,
+  };
+
+  // Create new action node
+  const newNode: Node = {
+    id: newNodeId,
+    position: newNodePosition,
+    data: {
+      label: "If Else",
+      elseLabel: "Else",
+      branches: [],
+      onDelete: () => handleDeleteNode(reactFlowInstance, newNodeId),
+      onUpdateBranches: (branches: Node[]) => {},
+      onUpdateLabel: (newLabel: string) =>
+        handleUpdateLabel(reactFlowInstance, newNodeId, newLabel),
+      onUpdateBranchesLabel: (branchId: string, newLabel: string) =>
+        handleUpdateLabel(reactFlowInstance, branchId, newLabel),
+      onUpdateElseLabel: (newLabel: string) =>
+        handleUpdateLabel(reactFlowInstance, newNodeId, newLabel),
+    },
+    type: "ifElse",
+  };
+
+  // Add new node to nodes
+  updatedNodes.push(newNode);
+
+  // Create new edges
+  const sourceToNewEdge: Edge = {
+    id: `${edge.source}-${newNodeId}`,
+    source: edge.source,
+    target: newNodeId,
+    type: "addButtonEdge",
+    data: {
+      reactFlowInstance: reactFlowInstance,
+    },
+  };
+
+  const newToTargetEdge: Edge = {
+    id: `${newNodeId}-${edge.target}`,
+    source: newNodeId,
+    target: edge.target,
+    type: "addButtonEdge",
+    data: {
+      reactFlowInstance: reactFlowInstance,
+    },
+  };
+
+  // Update states
+  reactFlowInstance.setNodes(updatedNodes);
+  reactFlowInstance.setEdges([
+    ...edges.filter((e) => e.id !== edgeId),
+    sourceToNewEdge,
+    newToTargetEdge,
+  ]);
+}
+
+export { handleUpdateLabel, handleDeleteNode, addActionNode, addIfElseNode };
