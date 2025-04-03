@@ -9,6 +9,7 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' index.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.6.0",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "pg-promise": "^11.13.0"
