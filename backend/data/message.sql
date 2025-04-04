@@ -7,4 +7,9 @@ CREATE TABLE IF NOT EXISTS message (
     FOREIGN KEY (contact_id) REFERENCES contact(id)
 );
 
+-- For recent messages queries
 CREATE INDEX IF NOT EXISTS idx_message_created_at ON message (created_at DESC);
+-- For searching message content
+CREATE INDEX IF NOT EXISTS idx_message_content_vector ON message USING GIN (content_vector);
+-- For searching by contact_id
+CREATE INDEX IF NOT EXISTS idx_message_contact_id ON message (contact_id);
