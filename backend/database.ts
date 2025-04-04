@@ -5,6 +5,6 @@ config();
 
 const pgp = pgPromise({});
 const db = pgp(process.env.DATABASE_URL ?? "");
-const { helpers } = pgp;
+const { helpers, as } = pgp;
 
-export { db, helpers };
+export { db, helpers, as };
