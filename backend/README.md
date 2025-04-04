@@ -33,3 +33,5 @@ API Client / Browser:
 
 - Contact name search is not implemented as it is not in the original schema
 - Additional parameter, type, to differentiate between filter type on search route
+- Contact number is well formatted like `+6591234567` with + and country code using faker data
+- Searching route is paginated as well

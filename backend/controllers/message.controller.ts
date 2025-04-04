@@ -126,17 +126,25 @@ async function searchMessages(
 
     countQuery = "SELECT COUNT(*) as total FROM message " + filter;
   } else if (searchType === "phone_number") {
-    const formattedSearchValue = searchValue.trim();
-    const filter = as.format(
-      "WHERE phone_number ILIKE $1",
-      `%${formattedSearchValue}%`,
-    );
+    // Remove all non-digit characters from the search value
+    const formattedSearchValue = searchValue.trim().replace(/\D/g, "");
+
+    // Check if the formatted search value is empty
+    if (formattedSearchValue.length === 0) {
+      response.status(400).json({
+        message: "Invalid phone number format",
+      });
+      return;
+    }
+
+    const filter = as.format("WHERE c.phone_number ~ $1", formattedSearchValue);
 
     query =
       `
       SELECT m.id, m.contact_id, c.phone_number, m.content, m.created_at 
       FROM message m 
-      JOIN contact c ON m.contact_id = c.id ` + filter;
+      JOIN contact c ON m.contact_id = c.id ` + filter +
+      `LIMIT ${limit} OFFSET ${offset}`;
 
     countQuery =
       "SELECT COUNT(*) as total FROM message m " +
