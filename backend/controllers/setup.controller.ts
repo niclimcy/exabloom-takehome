@@ -17,8 +17,8 @@ function generateContacts() {
 
 async function setUpDB(_: Request, response: Response) {
   try {
-    await db.none("DROP TABLE IF EXISTS messages");
-    await db.none("DROP TABLE IF EXISTS contacts");
+    await db.none("DROP TABLE IF EXISTS message");
+    await db.none("DROP TABLE IF EXISTS contact");
 
     console.log("Dropped existing tables");
 

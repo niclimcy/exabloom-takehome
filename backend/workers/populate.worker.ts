@@ -77,20 +77,25 @@ async function populateDB(): Promise<void> {
 
       const contactsCreated = await db.many<ContactResult>(contactsQuery);
 
-      // Insert 50 message for each contact
+      // Insert messages - 50 for each contact
       const messagesToInsert = [];
-      for (let j = 0; j < 50; j++) {
-        const randomMessage =
-          messages[Math.floor(Math.random() * messages.length)];
-        const contactId = contactsCreated[j % contactsCreated.length].id;
-        messagesToInsert.push({
-          contact_id: contactId,
-          content: randomMessage,
-        });
+      for (const contact of contactsCreated) {
+        for (let j = 0; j < 50; j++) {
+          const randomMessage =
+            messages[Math.floor(Math.random() * messages.length)];
+          messagesToInsert.push({
+            contact_id: contact.id,
+            content: randomMessage,
+            created_at: faker.date.past()
+          });
+        }
       }
-      const messageColumns = new helpers.ColumnSet(["contact_id", "content"], {
-        table: "message",
-      });
+      const messageColumns = new helpers.ColumnSet(
+        ["contact_id", "content", "created_at"],
+        {
+          table: "message",
+        },
+      );
 
       const messagesQuery = helpers.insert(messagesToInsert, messageColumns);
 
