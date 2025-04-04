@@ -69,14 +69,21 @@ async function searchMessages(
   request: Request,
   response: Response,
 ): Promise<void> {
-  const content = request.query.content as string;
-  const phone_number = request.query.phone_number as string;
+  const searchType = request.query.type as string;
+  const searchValue = request.query.searchValue as string;
 
-  // Check if at least one search parameter is provided
-  if (!content && !phone_number) {
+  // Make sure type and searchValue are provided
+  if (!searchType || !searchValue) {
     response.status(400).json({
-      message:
-        "At least one search parameter (content or phone_number) is required",
+      message: "type and searchValue are required",
+    });
+    return;
+  }
+
+  // Validate type
+  if (searchType !== "content" && searchType !== "phone_number") {
+    response.status(400).json({
+      message: "type must be either 'content' or 'phone_number'",
     });
     return;
   }
@@ -99,44 +106,43 @@ async function searchMessages(
     return;
   }
 
-  const conditions = [];
-
-  if (content) {
-    const formattedContent = content.trim().split(/\s+/).join(" & ");
-    conditions.push(
-      as.format(
-        "m.content_vector @@ to_tsquery('english', $1)",
-        `'${formattedContent}'`,
-      ),
-    );
-  }
-
-  if (phone_number) {
-    conditions.push(as.format("c.phone_number ILIKE $1", `%${phone_number}%`));
-  }
-
-  const whereClause = conditions.length
-    ? `WHERE ${conditions.join(" AND ")}`
-    : "";
-
   // Calculate offset
   const offset = (page - 1) * limit;
 
-  // Get total count with filters applied
-  const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM message m
-    JOIN contact c ON m.contact_id = c.id
-    ${whereClause}`;
+  let query = "";
+  let countQuery = "";
 
-  const query = `
-    SELECT m.id, m.contact_id, c.phone_number, m.content, m.created_at
-    FROM message m
-    JOIN contact c ON m.contact_id = c.id
-    ${whereClause}
-    ORDER BY m.created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
+  if (searchType === "content") {
+    const formattedSearchValue = searchValue.trim().split(/\s+/).join(" & ");
+    const filter = as.format(
+      "WHERE content_vector @@ to_tsquery('english', $1)",
+      `'${formattedSearchValue}'`,
+    );
+
+    query =
+      "SELECT id, contact_id, content, created_at FROM message " +
+      filter +
+      `LIMIT ${limit} OFFSET ${offset}`;
+
+    countQuery = "SELECT COUNT(*) as total FROM message " + filter;
+  } else if (searchType === "phone_number") {
+    const formattedSearchValue = searchValue.trim();
+    const filter = as.format(
+      "WHERE phone_number ILIKE $1",
+      `%${formattedSearchValue}%`,
+    );
+
+    query =
+      `
+      SELECT m.id, m.contact_id, c.phone_number, m.content, m.created_at 
+      FROM message m 
+      JOIN contact c ON m.contact_id = c.id ` + filter;
+
+    countQuery =
+      "SELECT COUNT(*) as total FROM message m " +
+      "JOIN contact c ON m.contact_id = c.id " +
+      filter;
+  }
 
   try {
     const [countResult, messages] = await db.multi(countQuery + ";" + query);

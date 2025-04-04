@@ -28,3 +28,8 @@ API Client / Browser:
 [GET] localhost:3000/api/v1/setup/db
 [GET] localhost:3000/api/v1/setup/populate
 ```
+
+## Assumptions
+
+- Contact name search is not implemented as it is not in the original schema
+- Additional parameter, type, to differentiate between filter type on search route
