@@ -1,4 +1,4 @@
-import { Edge, Node, ReactFlowInstance } from "@xyflow/react";
+import { Edge, Node } from "@xyflow/react";
 import { stratify, tree } from "d3-hierarchy";
 
 const g = tree<Node>();
@@ -30,14 +30,4 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     console.error("Layout calculation failed:", error);
     return { nodes, edges };
   }
-};
-
-export const applyLayout = (reactFlowInstance: ReactFlowInstance) => {
-  const nodes = reactFlowInstance.getNodes();
-  const edges = reactFlowInstance.getEdges();
-
-  const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges);
-
-  reactFlowInstance.setNodes(layoutedNodes);
-  setTimeout(() => reactFlowInstance.fitView({ padding: 0.2 }), 50);
 };

@@ -1,5 +1,4 @@
 import { Edge, Node, ReactFlowInstance } from "@xyflow/react";
-import { applyLayout } from "./layout";
 
 function handleUpdateLabel(
   reactFlowInstance: ReactFlowInstance,
@@ -63,9 +62,6 @@ function handleDeleteNode(
     ),
     newEdge,
   ]);
-
-  // Apply layout after node deletion
-  setTimeout(() => applyLayout(reactFlowInstance), 10);
 }
 
 function addActionNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
@@ -119,9 +115,6 @@ function addActionNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
     sourceToNewEdge,
     newToTargetEdge,
   ]);
-
-  // Apply layout after adding node
-  setTimeout(() => applyLayout(reactFlowInstance), 10);
 }
 
 function handleAddBranch(
@@ -202,9 +195,6 @@ function handleAddBranch(
       return node;
     }),
   );
-
-  // Apply layout after adding branch
-  setTimeout(() => applyLayout(reactFlowInstance), 10);
 
   return newBranch;
 }
@@ -380,9 +370,6 @@ function addIfElseNode(reactFlowInstance: ReactFlowInstance, edgeId: string) {
   );
 
   reactFlowInstance.setEdges(updatedEdges);
-
-  // Apply layout after adding if-else structure
-  setTimeout(() => applyLayout(reactFlowInstance), 10);
 }
 
 export { handleUpdateLabel, handleDeleteNode, addActionNode, addIfElseNode };

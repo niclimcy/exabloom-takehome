@@ -8,8 +8,8 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { edgeTypes, nodeTypes } from "@/types";
-import { applyLayout } from "@/utils/layout";
-import { useEffect } from "react";
+import { getLayoutedElements } from "@/utils/layout";
+import { useCallback, useEffect } from "react";
 
 const defaultNodes: Node[] = [
   {
@@ -26,27 +26,38 @@ const defaultNodes: Node[] = [
   },
 ];
 
-const defaultEdges: Edge[] = [];
+const defaultEdges: Edge[] = [
+  {
+    id: "start-end",
+    source: "start",
+    target: "end",
+    type: "addButtonEdge",
+  },
+];
 
 function Flow() {
   const reactFlowInstance = useReactFlow();
+  const { fitView } = reactFlowInstance;
 
   useEffect(() => {
-    // Add a default edge
-    const initialEdge: Edge = {
-      id: "start-end",
-      source: "start",
-      target: "end",
-      type: "addButtonEdge",
-      data: {
-        reactFlowInstance: reactFlowInstance,
-      },
-    };
-    reactFlowInstance.addEdges(initialEdge);
-
-    // Apply initial layout
-    setTimeout(() => applyLayout(reactFlowInstance), 100);
+    reactFlowInstance.setEdges((eds) =>
+      eds.map((edge) => ({
+        ...edge,
+        data: { ...edge.data, reactFlowInstance: reactFlowInstance },
+      })),
+    );
   }, []);
+
+  const onLayout = useCallback(() => {
+    const nodes = reactFlowInstance.getNodes();
+    const edges = reactFlowInstance.getEdges();
+    const layouted = getLayoutedElements(nodes, edges);
+
+    reactFlowInstance.setNodes([...layouted.nodes]);
+    reactFlowInstance.setEdges([...layouted.edges]);
+
+    fitView();
+  }, [fitView, reactFlowInstance]);
 
   return (
     <div style={{ height: "100%" }}>
@@ -55,6 +66,10 @@ function Flow() {
         defaultEdges={defaultEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        onNodesChange={() => {
+          onLayout();
+        }}
+        fitView
       >
         <Background />
         <Controls />
