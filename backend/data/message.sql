@@ -6,3 +6,5 @@ CREATE TABLE IF NOT EXISTS message (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (contact_id) REFERENCES contact(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_message_created_at ON message (created_at DESC);
