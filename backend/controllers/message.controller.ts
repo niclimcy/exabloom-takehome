@@ -27,55 +27,42 @@ async function getRecentMessages(
   // Calculate offset
   const offset = (page - 1) * limit;
 
-  db.task(async (t) => {
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM message`;
-    const countResult = await t.one(countQuery);
-    const total = parseInt(countResult.total);
+  const countQuery = `SELECT COUNT(*) as total FROM message`;
+  const query = `
+    SELECT id, contact_id, content, created_at FROM message
+    ORDER BY created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  try {
+    const [countResult, messages] = await db.multi(countQuery + ";" + query);
+
+    const total = parseInt(countResult[0].total);
+
     // Calculate total pages
-
-    // Fetch paginated messages
-    const query = `
-      SELECT * FROM message
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-    const messages = await t.manyOrNone(query);
-
-    // Calculate pagination metadata
     const totalPages = Math.ceil(total / limit);
-    return {
+
+    // Return the result
+    response.status(200).json({
       messages,
       total,
       page,
       limit,
       totalPages,
-    };
-  })
-    .then((result) => {
-      const { messages, total, page, limit, totalPages } = result;
-
-      response.status(200).json({
-        messages,
-        total,
-        page,
-        limit,
-        totalPages,
-      });
-    })
-    .catch((error: unknown) => {
-      if (error instanceof Error) {
-        response.status(500).json({
-          message: "Error fetching messages",
-          error: error.message,
-        });
-      } else {
-        response.status(500).json({
-          message: "Error fetching messages",
-          error: "Unknown error",
-        });
-      }
     });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      response.status(500).json({
+        message: "Error fetching messages",
+        error: error.message,
+      });
+    } else {
+      response.status(500).json({
+        message: "Error fetching messages",
+        error: "Unknown error",
+      });
+    }
+  }
 }
 
 async function searchMessages(
@@ -115,11 +102,17 @@ async function searchMessages(
   const conditions = [];
 
   if (content) {
-    conditions.push(as.format("content ILIKE $1", `%${content}%`));
+    const formattedContent = content.trim().split(/\s+/).join(" & ");
+    conditions.push(
+      as.format(
+        "m.content_vector @@ to_tsquery('english', $1)",
+        `'${formattedContent}'`,
+      ),
+    );
   }
 
   if (phone_number) {
-    conditions.push(as.format("phone_number ILIKE $1", `%${phone_number}%`));
+    conditions.push(as.format("c.phone_number ILIKE $1", `%${phone_number}%`));
   }
 
   const whereClause = conditions.length
@@ -129,50 +122,51 @@ async function searchMessages(
   // Calculate offset
   const offset = (page - 1) * limit;
 
-  db.task(async (t) => {
-    // Get total count with filters applied
-    const countQuery = `SELECT COUNT(*) as total FROM message ${whereClause}`;
-    const countResult = await t.one(countQuery);
-    const total = parseInt(countResult.total);
+  // Get total count with filters applied
+  const countQuery = `
+    SELECT COUNT(*) as total 
+    FROM message m
+    JOIN contact c ON m.contact_id = c.id
+    ${whereClause}`;
+
+  const query = `
+    SELECT m.id, m.contact_id, c.phone_number, m.content, m.created_at
+    FROM message m
+    JOIN contact c ON m.contact_id = c.id
+    ${whereClause}
+    ORDER BY m.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  try {
+    const [countResult, messages] = await db.multi(countQuery + ";" + query);
+
+    const total = parseInt(countResult[0].total);
 
     // Calculate total pages
     const totalPages = Math.ceil(total / limit);
 
-    // Fetch messages with proper pagination
-    const query = `
-        SELECT * FROM message
-        ${whereClause}
-        ORDER BY created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
-
-    // Add await to properly resolve the promise
-    const messages = await t.manyOrNone(query);
-
-    return {
+    // Return the result
+    response.status(200).json({
       messages,
       total,
       page,
       limit,
       totalPages,
-    };
-  })
-    .then((result) => {
-      response.status(200).json(result);
-    })
-    .catch((error: unknown) => {
-      if (error instanceof Error) {
-        response.status(500).json({
-          message: "Error searching messages",
-          error: error.message,
-        });
-      } else {
-        response.status(500).json({
-          message: "Error searching messages",
-          error: "Unknown error",
-        });
-      }
     });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      response.status(500).json({
+        message: "Error searching messages",
+        error: error.message,
+      });
+    } else {
+      response.status(500).json({
+        message: "Error searching messages",
+        error: "Unknown error",
+      });
+    }
+  }
 }
 
 export { getRecentMessages, searchMessages };

@@ -73,7 +73,12 @@ async function populateDB(_: Request, response: Response) {
     console.log("Starting database population in background...");
 
     // Start the database population in a worker thread
-    const workerPath = path.join(__dirname, "..", "workers", "populate.worker.js");
+    const workerPath = path.join(
+      __dirname,
+      "..",
+      "workers",
+      "populate.worker.js",
+    );
     const worker = new Worker(workerPath);
 
     worker.on("message", (message) => {
