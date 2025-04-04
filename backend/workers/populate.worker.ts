@@ -3,7 +3,7 @@ import path from "node:path";
 import readline from "node:readline";
 import { parentPort } from "node:worker_threads";
 import { faker } from "@faker-js/faker";
-import { db } from "../database";
+import { db, helpers } from "../database";
 
 // Ensure parentPort exists since this is a worker file
 if (!parentPort) {
@@ -52,7 +52,7 @@ interface ContactResult {
   [key: string]: unknown;
 }
 
-async function populateDatabase(): Promise<void> {
+async function populateDB(): Promise<void> {
   try {
     parentPort?.postMessage("Starting database population...");
 
@@ -60,53 +60,41 @@ async function populateDatabase(): Promise<void> {
     const messages = await getMessageContent();
 
     const contactsArray = Array.from(contacts);
-    const CHUNK_SIZE = 1000; // Process 1000 contacts at a time
+    const CHUNK_SIZE = 1000;
     const totalContacts = contactsArray.length;
 
-    // Process contacts in chunks to avoid memory issues
+    // Process contacts in chunks to avoid out of memory
     for (let i = 0; i < totalContacts; i += CHUNK_SIZE) {
-      const contactChunk = contactsArray.slice(i, i + CHUNK_SIZE);
-
-      await db.tx(async (t) => {
-        // Batch insert contacts for this chunk
-        const contactQueries = contactChunk.map((contact) =>
-          t.one<ContactResult>(
-            "INSERT INTO contact (phone_number) VALUES ($1) RETURNING id",
-            [contact],
-          ),
-        );
-
-        const contactResults = await t.batch(contactQueries);
-
-        // Process messages in smaller batches for each contact
-        for (const contactResult of contactResults) {
-          const contactId = contactResult.id;
-          // Generate random messages for this contact
-          const contactMessages: string[] = [];
-          for (let j = 0; j < 50; j++) {
-            const randomIndex = Math.floor(Math.random() * messages.length);
-            contactMessages.push(messages[randomIndex]);
-          }
-
-          // Insert messages in batches of 100
-          const MESSAGE_BATCH_SIZE = 100;
-          for (let k = 0; k < contactMessages.length; k += MESSAGE_BATCH_SIZE) {
-            const messageBatch = contactMessages.slice(
-              k,
-              k + MESSAGE_BATCH_SIZE,
-            );
-
-            const messageQueries = messageBatch.map((message) =>
-              t.none(
-                "INSERT INTO message (contact_id, content) VALUES ($1, $2)",
-                [contactId, message],
-              ),
-            );
-
-            await t.batch(messageQueries);
-          }
-        }
+      const contactsChunk = contactsArray
+        .slice(i, i + CHUNK_SIZE)
+        .map((contact) => ({ phone_number: contact }));
+      const contactColumns = new helpers.ColumnSet(["phone_number"], {
+        table: "contact",
       });
+
+      const contactsQuery =
+        helpers.insert(contactsChunk, contactColumns) + " RETURNING id";
+
+      const contactsCreated = await db.many<ContactResult>(contactsQuery);
+
+      // Insert 50 message for each contact
+      const messagesToInsert = [];
+      for (let j = 0; j < 50; j++) {
+        const randomMessage =
+          messages[Math.floor(Math.random() * messages.length)];
+        const contactId = contactsCreated[j % contactsCreated.length].id;
+        messagesToInsert.push({
+          contact_id: contactId,
+          content: randomMessage,
+        });
+      }
+      const messageColumns = new helpers.ColumnSet(["contact_id", "content"], {
+        table: "message",
+      });
+
+      const messagesQuery = helpers.insert(messagesToInsert, messageColumns);
+
+      await db.none(messagesQuery);
 
       parentPort?.postMessage(
         `Processed ${Math.min(i + CHUNK_SIZE, totalContacts)} of ${totalContacts} contacts`,
@@ -124,4 +112,4 @@ async function populateDatabase(): Promise<void> {
 }
 
 // Start the population process
-populateDatabase();
+populateDB();

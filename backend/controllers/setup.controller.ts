@@ -66,33 +66,36 @@ async function populateDB(_: Request, response: Response) {
   try {
     // Return success response immediately
     response.status(201).json({
-      message: "Database population started in background. Check server console for progress.",
+      message:
+        "Database population started in background. Check server console for progress.",
     });
-    
+
     console.log("Starting database population in background...");
-    
+
     // Start the database population in a worker thread
-    const workerPath = path.join(__dirname, "..", "workers", "populateDB.js");
+    const workerPath = path.join(__dirname, "..", "workers", "populate.worker.js");
     const worker = new Worker(workerPath);
-    
-    worker.on('message', (message) => {
+
+    worker.on("message", (message) => {
       console.log(message);
     });
-    
-    worker.on('error', (err) => {
-      console.error('Worker error:', err);
+
+    worker.on("error", (err) => {
+      console.error("Worker error:", err);
     });
-    
-    worker.on('exit', (code) => {
+
+    worker.on("exit", (code) => {
       if (code !== 0) {
         console.error(`Worker stopped with exit code ${code}`);
       } else {
-        console.log('Database population completed successfully');
+        console.log("Database population completed successfully");
       }
     });
   } catch (error: unknown) {
-    console.error('Error starting database population:', 
-      error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      "Error starting database population:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }
 

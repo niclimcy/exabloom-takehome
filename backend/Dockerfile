@@ -20,4 +20,4 @@ COPY --from=0 /app/data ./dist/data
 # Expose the port the app runs on
 EXPOSE 3000
 # Run the app
-CMD [ "node", "dist/index.js" ]
+CMD [ "node", "--prof", "dist/index.js" ]
